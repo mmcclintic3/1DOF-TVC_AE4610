@@ -20,24 +20,26 @@ const float SERVO_MIN_US = SERVO_CENTER_US - SERVO_MAX_DELTA_US;
 const float SERVO_MAX_US = SERVO_CENTER_US + SERVO_MAX_DELTA_US;
 const float SERVO_CMD_GAIN   = 45.0f;  // Softer post-PID gain to reduce setpoint chatter
 const float SERVO_MAX_STEP_US = 45.0f; // Rate limit each 10 ms update to calm oscillation
-const float CONTROL_SIGN     = -1.0f;  // Flip to -1.0f if the servo corrects the wrong way
+const float CONTROL_SIGN     = 1.0f;  // Flip to -1.0f if the servo corrects the wrong way
 
 const float PID_OUT_MIN = -SERVO_MAX_DEFLECTION_RAD;
 const float PID_OUT_MAX =  SERVO_MAX_DEFLECTION_RAD;
 
 const unsigned long LOOP_MS  = 10;
-const unsigned long PRINT_MS = 100;
+const unsigned long PRINT_MS = 50;
 
 const float Kp = 0.0307f;
 const float Ki = 0.0113f;
 const float Kd = 0.0186f;
+
+static bool header_printed = false;
 
 PID pid(Kp, Ki, Kd, PID_OUT_MIN, PID_OUT_MAX, LOOP_MS);
 
 Quaternion q0;
 bool calibrated = false;
 float pitch = 0.0f;
-float pitch_ref = 30.0f * PI / 180.0f;
+float pitch_ref = 25.0f * PI / 180.0f;
 
 void setup() {
   Serial.begin(115200);
@@ -119,12 +121,15 @@ void loop() {
 
   if (now - last_print >= PRINT_MS) {
     last_print = now;
-    Serial.print("imu_pitch:");   Serial.println(pitch, 4);
-    Serial.print("u_cmd:");       Serial.println(u_cmd, 4);
-    Serial.print("ctrl_sign:");   Serial.println(CONTROL_SIGN, 1);
-    Serial.print("servo_gain:");  Serial.println(SERVO_CMD_GAIN, 1);
-    Serial.print("servo_du:");    Serial.println(servo_delta_us, 1);
-    Serial.print("servo_cmd:");   Serial.println(servo_us);
-    Serial.print("esc_us:");      Serial.println(esc_us);
+    if (!header_printed) {
+      Serial.println("timestamp_ms,imu_pitch,u_cmd,servo_gain_servo_du,servo_cmd,esc_us");
+      header_printed = true;
+    }
+    Serial.print(now);                Serial.print(",");
+    Serial.print(pitch, 4);           Serial.print(",");
+    Serial.print(u_cmd, 4);           Serial.print(",");
+    Serial.print(SERVO_CMD_GAIN, 1);  Serial.print(",");
+    Serial.print(servo_us);           Serial.print(",");
+    Serial.println(esc_us);         
   }
 }
